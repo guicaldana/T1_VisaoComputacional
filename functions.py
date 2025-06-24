@@ -75,3 +75,19 @@ def generate_intrinsic_matrix(f, w_p, h_p, w_mm, h_mm, s_theta=0):
     
     return K
 
+
+# Função de projeção 2D 
+
+def generate_projection_2d(K, G, M, img):
+    # Matriz de projeção
+    P_can = np.eye(3,4)
+    M_proj = K @ P_can @ G
+
+    # Projeção e criação da imagem
+    p_img = M_proj@img
+
+    # Preparação das coordenadas na forma cartesiana
+    p_img = p_img/p_img[2]
+    
+    return p_img
+
