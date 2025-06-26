@@ -3,9 +3,10 @@ import matplotlib.pyplot as plt
 from PyQt5.QtWidgets import QApplication, QMainWindow, QGridLayout, QLabel, QWidget, QLineEdit, QHBoxLayout, QVBoxLayout, QPushButton,QGroupBox
 from PyQt5.QtGui import QDoubleValidator
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from mpl_toolkits.mplot3d import Axes3D
-from numpy import array
-import functions
+import functions.plot_functions as pltfn
+import functions.move_functions as mvfn
+import functions.camera_functions as camfn
+from wireframe import house
 
 
 ###### Crie suas funções de translação, rotação, criação de referenciais, plotagem de setas e qualquer outra função que precisar
@@ -13,27 +14,28 @@ import functions
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-
         #definindo as variaveis
         self.set_variables()
         #Ajustando a tela    
         self.setWindowTitle("Grid Layout")
         self.setGeometry(100, 100,1280 , 720)
         self.setup_ui()
+        self.refresh_canvas()
 
     def set_variables(self):
-        self.objeto_original = [] #modificar
+        
+        self.objeto_original = house()
         self.objeto = self.objeto_original
-        self.cam_original = [] #modificar
-        self.cam = [] #modificar
-        self.px_base = 1280  #modificar
-        self.px_altura = 720 #modificar
-        self.dist_foc = 50 #modificar
-        self.stheta = 0 #modificar
-        self.ox = self.px_base/2 #modificar
-        self.oy = self.px_altura/2 #modificar
-        self.ccd = [36,24] #modificar
-        self.projection_matrix = [] #modificar
+        self.cam_original = camfn.create_default_camera()
+        self.cam = camfn.adjust_camera(self.cam_original)
+        self.px_base = 1280  
+        self.px_altura = 720 
+        self.dist_foc = 35 
+        self.stheta = 0 
+        self.ox = self.px_base/2 
+        self.oy = self.px_altura/2 
+        self.ccd = [36,24]
+        self.K = self.intrinsic()
         
     def setup_ui(self):
         # Criar o layout de grade
@@ -84,6 +86,20 @@ class MainWindow(QMainWindow):
         
         # Definir o widget central na janela principal
         self.setCentralWidget(central_widget)
+    
+    # Função para gerar a matriz de parâmetros intrínsecos
+    def intrinsic(self):
+        self.K = camfn.generate_intrinsic_matrix(self.dist_foc, self.px_base, self.px_altura, self.ccd[0], self.ccd[1])
+        return self.K
+    
+    # Funções para atualizar o canvas
+    def refresh_canvas(self):
+        pltfn.refresh_canvas(self.ax1, self.ax2, self.px_base, self.px_altura, self.objeto, self.cam, self.canvas1, self.canvas2, self.K)
+
+
+    def reset_canvas(self):
+        self.initialize_variables()
+        self.refresh_canvas()
 
     def create_intrinsic_widget(self, title):
         # Criar um widget para agrupar os QLineEdit
@@ -203,26 +219,13 @@ class MainWindow(QMainWindow):
         self.fig1, self.ax1 = plt.subplots()
         self.ax1.set_title("Imagem")
         self.canvas1 = FigureCanvas(self.fig1)
-
-        ##### Falta acertar os limites do eixo X
-        
-        ##### Falta acertar os limites do eixo Y
-        
-        ##### Você deverá criar a função de projeção 
-        object_2d = self.projection_2d()
-
-        ##### Falta plotar o object_2d que retornou da projeção
-          
-        self.ax1.grid('True')
-        self.ax1.set_aspect('equal')  
         canvas_layout.addWidget(self.canvas1)
 
         # Criar um objeto FigureCanvas para exibir o gráfico 3D
         self.fig2 = plt.figure()
         self.ax2 = self.fig2.add_subplot(111, projection='3d')
-        
-        ##### Falta plotar o seu objeto 3D e os referenciais da câmera e do mundo
-        
+        self.ax2 = pltfn.create_plot(ax=self.ax2, lim=[-15, 30])
+        pltfn.render_wireframe(self.ax2, self.objeto)
         self.canvas2 = FigureCanvas(self.fig2)
         canvas_layout.addWidget(self.canvas2)
 
@@ -230,19 +233,88 @@ class MainWindow(QMainWindow):
         return canvas_widget
 
 
-    ##### Você deverá criar as suas funções aqui
-    
+    # Funções para atualização dos parâmetros intrínsecos
     def update_params_intrinsc(self, line_edits):
+        px_base = line_edits[0].text()
+        px_altura = line_edits[1].text()
+        ccd_x = line_edits[2].text()
+        ccd_y = line_edits[3].text()
+        dist_focal = line_edits[4].text()
+        s_theta = line_edits[5].text()
+        if px_base:
+            self.px_base = float(px_base)
+        if px_altura:
+            self.px_altura = float(px_altura)
+        if ccd_x:
+            self.ccd[0] = float(ccd_x)
+        if ccd_y:
+            self.ccd[1] = float(ccd_y)
+        if dist_focal:
+            self.dist_foc = float(dist_focal)
+        if s_theta:
+            self.stheta = float(s_theta)
+        self.intrinsic()
+        self.refresh_canvas()
+        for line in line_edits:
+            line.clear()
         return 
-
+    
+    # Funções para atualização dos parâmetros no referencial do mundo
     def update_world(self,line_edits):
+        x = line_edits[0].text()
+        x_ang = line_edits[1].text()
+        y = line_edits[2].text()
+        y_ang = line_edits[3].text()
+        z = line_edits[4].text()
+        z_ang = line_edits[5].text()
+        dx, dy, dz = float(x or 0), float(y or 0), float(z or 0)
+        if x_ang:
+            self.cam = mvfn.WorldMove.apply_rotate_x(self.cam,float(x_ang))
+        if y_ang:
+            self.cam = mvfn.WorldMove.apply_rotate_y(self.cam,float(y_ang))
+        if z_ang:
+            self.cam = mvfn.WorldMove.apply_rotate_z(self.cam,float(z_ang))
+        self.cam = mvfn.WorldMove.apply_translate(self.cam,dx, dy, dz)
+        self.refresh_canvas()
+        for field in line_edits:
+            field.clear()
         return
 
+    # Funções para atualização dos parâmetros no referencial da câmera
     def update_cam(self,line_edits):
+        x = line_edits[0].text()
+        x_ang = line_edits[1].text()
+        y = line_edits[2].text()
+        y_ang = line_edits[3].text()
+        z = line_edits[4].text()
+        z_ang = line_edits[5].text()
+        dx, dy, dz = float(x or 0), float(y or 0), float(z or 0)
+        if dx or dy or dz:
+            self.cam = mvfn.CameraMove.apply_translate(self.cam, dx, dy, dz)
+        if x_ang:
+            self.cam = mvfn.CameraMove.apply_rotate_x(self.cam,float(x_ang))
+        if y_ang:
+            self.cam = mvfn.CameraMove.apply_rotate_y(self.cam,float(y_ang))
+        if z_ang:
+            self.cam = mvfn.CameraMove.apply_rotate_z(self.cam,float(z_ang))
+        self.refresh_canvas()
+        for field in line_edits:
+            field.clear()
         return 
     
     def projection_2d(self):
-        return 
+
+        view_matrix = np.linalg.inv(self.cam)
+
+        intrinsic_matrix = self.intrinsic()
+
+        projected_points = pltfn.generate_projection_2d(
+            intrinsic_matrix=intrinsic_matrix,
+            view_matrix=view_matrix,
+            world_points=self.object_vertices
+        )
+        
+        return projected_points
     
     def generate_intrinsic_params_matrix(self):
         return 
