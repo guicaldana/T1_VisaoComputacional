@@ -20,7 +20,7 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("Grid Layout")
         self.setGeometry(100, 100,1280 , 720)
         self.setup_ui()
-        self.refresh_canvas()
+        self.update_canvas()
 
     def set_variables(self):
         
@@ -92,14 +92,7 @@ class MainWindow(QMainWindow):
         self.K = camfn.generate_intrinsic_matrix(self.dist_foc, self.px_base, self.px_altura, self.ccd[0], self.ccd[1])
         return self.K
     
-    # Funções para atualizar o canvas
-    def refresh_canvas(self):
-        pltfn.refresh_canvas(self.ax1, self.ax2, self.px_base, self.px_altura, self.objeto, self.cam, self.canvas1, self.canvas2, self.K)
-
-
-    def reset_canvas(self):
-        self.initialize_variables()
-        self.refresh_canvas()
+    
 
     def create_intrinsic_widget(self, title):
         # Criar um widget para agrupar os QLineEdit
@@ -254,7 +247,7 @@ class MainWindow(QMainWindow):
         if s_theta:
             self.stheta = float(s_theta)
         self.intrinsic()
-        self.refresh_canvas()
+        self.update_canvas()
         for line in line_edits:
             line.clear()
         return 
@@ -275,7 +268,7 @@ class MainWindow(QMainWindow):
         if z_ang:
             self.cam = mvfn.WorldMove.apply_rotate_z(self.cam,float(z_ang))
         self.cam = mvfn.WorldMove.apply_translate(self.cam,dx, dy, dz)
-        self.refresh_canvas()
+        self.update_canvas()
         for field in line_edits:
             field.clear()
         return
@@ -297,7 +290,7 @@ class MainWindow(QMainWindow):
             self.cam = mvfn.CameraMove.apply_rotate_y(self.cam,float(y_ang))
         if z_ang:
             self.cam = mvfn.CameraMove.apply_rotate_z(self.cam,float(z_ang))
-        self.refresh_canvas()
+        self.update_canvas()
         for field in line_edits:
             field.clear()
         return 
@@ -321,9 +314,12 @@ class MainWindow(QMainWindow):
     
 
     def update_canvas(self):
+        pltfn.refresh_canvas(self.ax1, self.ax2, self.px_base, self.px_altura, self.objeto, self.cam, self.canvas1, self.canvas2, self.K)
         return 
     
     def reset_canvas(self):
+        self.initialize_variables()
+        self.update_canvas()
         return
     
 if __name__ == '__main__':
