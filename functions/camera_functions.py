@@ -20,7 +20,7 @@ def create_default_camera():
 def adjust_camera(cam):
   cam = mvfn.WorldMove.apply_rotate_x(cam, -90)
   cam = mvfn.WorldMove.apply_rotate_z(cam,90)
-  cam = mvfn.WorldMove.apply_translate(cam,25, 0, 10)
+  cam = mvfn.WorldMove.apply_translate(cam,30, -5, 8)
   return cam
 
 # Geração da matriz de parâmetros intrínsecos

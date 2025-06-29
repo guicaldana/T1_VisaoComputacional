@@ -87,10 +87,7 @@ class MainWindow(QMainWindow):
         # Definir o widget central na janela principal
         self.setCentralWidget(central_widget)
     
-    # Função para gerar a matriz de parâmetros intrínsecos
-    def intrinsic(self):
-        self.K = camfn.generate_intrinsic_matrix(self.dist_foc, self.px_base, self.px_altura, self.ccd[0], self.ccd[1])
-        return self.K
+   
     
     
 
@@ -217,7 +214,7 @@ class MainWindow(QMainWindow):
         # Criar um objeto FigureCanvas para exibir o gráfico 3D
         self.fig2 = plt.figure()
         self.ax2 = self.fig2.add_subplot(111, projection='3d')
-        self.ax2 = pltfn.create_plot(ax=self.ax2, lim=[-15, 30])
+        self.ax2 = pltfn.create_plot(ax=self.ax2, lim=[-50, 50])
         pltfn.render_wireframe(self.ax2, self.objeto)
         self.canvas2 = FigureCanvas(self.fig2)
         canvas_layout.addWidget(self.canvas2)
@@ -309,8 +306,10 @@ class MainWindow(QMainWindow):
         
         return projected_points
     
-    def generate_intrinsic_params_matrix(self):
-        return 
+     # Função para gerar a matriz de parâmetros intrínsecos
+    def intrinsic(self):
+        self.K = camfn.generate_intrinsic_matrix(self.dist_foc, self.px_base, self.px_altura, self.ccd[0], self.ccd[1])
+        return self.K
     
 
     def update_canvas(self):

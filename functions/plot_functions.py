@@ -1,9 +1,8 @@
 import numpy as np
-from math import pi,cos,sin
 import matplotlib.pyplot as plt
 
 # Função para criar plot
-def create_plot(ax=None, figure=None, lim=[-20, 20]):
+def create_plot(ax=None, figure=None, lim=[-50, 50]):
   if figure is None:
       figure = plt.figure(figsize=(8, 8))
   if ax is None:

@@ -59,14 +59,14 @@ class CameraMove():
     ang = translate_degree_rad(ang)
     R = Move.rotate_Y(ang)
     # Apply rotation to the camera vector
-    cam = R @ cam
+    cam = cam @ R
     return cam
 
   def apply_rotate_z(cam,ang):
     ang = translate_degree_rad(ang)
     R = Move.rotate_Z(ang)
     # Apply rotation to the camera vector
-    cam = R @ cam
+    cam = cam @ R
     return cam
 
   def apply_translate(cam,x,y,z):
